@@ -1,0 +1,14 @@
+# ─── Skyline Airways Flight Booking System ────────────────────────────────────
+# requirements.txt
+# Install with:  pip install -r requirements.txt
+# Run with:      streamlit run app.py
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Core UI framework
+streamlit>=1.35.0
+
+# Data manipulation (used in admin panel tables)
+pandas>=2.2.0
+
+# SQLite3 is built into Python — no install needed.
+# All other dependencies are Python standard library.
