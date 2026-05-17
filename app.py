@@ -1094,6 +1094,7 @@ def page_search():
         else:
             results = db.search_flights(origin, destination)
             st.session_state.search_results  = results
+            st.session_state.selected_flight = None
             st.session_state.search_params   = {
                 "origin": origin,
                 "destination": destination,
@@ -1131,48 +1132,63 @@ def page_search():
             logo       = utils.get_airline_logo_emoji(flight["airline"])
             total      = utils.calculate_total_price(base_price, pax, date.fromisoformat(params["travel_date"]))
             surcharge  = (date.fromisoformat(params["travel_date"]) - date.today()).days <= 7
+            surcharge_badge = "&nbsp;<span class='fc-badge' style='border-color:rgba(245,166,35,0.4);color:#fcd34d;background:rgba(245,166,35,0.1)'>⚡ Last Min</span>" if surcharge else ""
+
+            # Extract all values before HTML
+            airline = flight['airline']
+            flight_num = flight['flight_number']
+            aircraft = flight['aircraft']
+            departure_time = flight['departure_time']
+            origin = flight['origin']
+            duration = flight['duration']
+            arrival_time = flight['arrival_time']
+            destination = flight['destination']
+            available_seats = flight['available_seats']
+            total_formatted = f"${total:,.2f}"
+            animation_delay = i * 0.06
 
             col_info, col_btn = st.columns([5, 1])
             with col_info:
-                st.markdown(f"""
-                <div class="flight-card" style="animation-delay:{i*0.06}s">
-                    <div class="fc-header">
-                        <div class="fc-airline-wrap">
-                            <span class="fc-logo">{logo}</span>
-                            <div>
-                                <div class="fc-airline">{flight['airline']}</div>
-                                <div class="fc-number">{flight['flight_number']} · {flight['aircraft']}</div>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="fc-badge">{cls}</span>
-                            {"&nbsp;<span class='fc-badge' style='border-color:rgba(245,166,35,0.4);color:#fcd34d;background:rgba(245,166,35,0.1)'>⚡ Last Min</span>" if surcharge else ""}
-                        </div>
-                    </div>
-                    <div class="fc-route">
-                        <div>
-                            <div class="fc-time">{flight['departure_time']}</div>
-                            <div class="fc-city">{flight['origin']}</div>
-                        </div>
-                        <div class="fc-mid">
-                            <div class="fc-duration">{flight['duration']}</div>
-                            <div class="fc-line"></div>
-                            <div class="fc-plane-icon">✈</div>
-                        </div>
-                        <div style="text-align:right">
-                            <div class="fc-time">{flight['arrival_time']}</div>
-                            <div class="fc-city">{flight['destination']}</div>
-                        </div>
-                    </div>
-                    <div class="fc-footer">
-                        <div>
-                            <div class="fc-price">${total:,.2f}</div>
-                            <div class="fc-price-label">total for {pax} pax · {cls}</div>
-                        </div>
-                        <div class="fc-seats">🪑 {flight['available_seats']} seats left</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                html_card = (
+                    '<div class="flight-card" style="animation-delay:' + str(animation_delay) + 's">'
+                    '<div class="fc-header">'
+                    '<div class="fc-airline-wrap">'
+                    '<span class="fc-logo">' + logo + '</span>'
+                    '<div>'
+                    '<div class="fc-airline">' + airline + '</div>'
+                    '<div class="fc-number">' + flight_num + ' · ' + aircraft + '</div>'
+                    '</div>'
+                    '</div>'
+                    '<div>'
+                    '<span class="fc-badge">' + cls + '</span>'
+                    + surcharge_badge +
+                    '</div>'
+                    '</div>'
+                    '<div class="fc-route">'
+                    '<div>'
+                    '<div class="fc-time">' + departure_time + '</div>'
+                    '<div class="fc-city">' + origin + '</div>'
+                    '</div>'
+                    '<div class="fc-mid">'
+                    '<div class="fc-duration">' + duration + '</div>'
+                    '<div class="fc-line"></div>'
+                    '<div class="fc-plane-icon">✈</div>'
+                    '</div>'
+                    '<div style="text-align:right">'
+                    '<div class="fc-time">' + arrival_time + '</div>'
+                    '<div class="fc-city">' + destination + '</div>'
+                    '</div>'
+                    '</div>'
+                    '<div class="fc-footer">'
+                    '<div>'
+                    '<div class="fc-price">' + total_formatted + '</div>'
+                    '<div class="fc-price-label">total for ' + str(pax) + ' pax · ' + cls + '</div>'
+                    '</div>'
+                    '<div class="fc-seats">🪑 ' + str(available_seats) + ' seats left</div>'
+                    '</div>'
+                    '</div>'
+                )
+                st.markdown(html_card, unsafe_allow_html=True)
             with col_btn:
                 st.markdown("<div style='margin-top:96px'></div>", unsafe_allow_html=True)
                 if st.button("Select ✈️", key=f"sel_{flight['flight_number']}", use_container_width=True):
