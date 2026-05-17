@@ -91,7 +91,19 @@ html, body, [class*="css"], main,
 ::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 #MainMenu, footer { visibility: hidden; }
-.stDeployButton, [data-testid="stToolbar"] { display: none; }
+.stDeployButton { display: none; }
+[data-testid="stToolbar"] {
+    color: white !important;
+}
+[data-testid="stToolbar"] button,
+[data-testid="stToolbar"] svg {
+    color: white !important;
+    fill: white !important;
+}
+[data-testid="stToolbar"] button {
+    background: transparent !important;
+    border: none !important;
+}
 
 /* ── App Header ── */
 .stAppHeader {
@@ -152,20 +164,34 @@ html, body, [class*="css"], main,
 
 /* ── Inputs ── */
 .stTextInput > div > div > input,
-.stSelectbox > div > div,
 .stDateInput > div > div > input,
-.stNumberInput > div > div > input {
+.stNumberInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stMultiSelect > div > div > div {
     background: rgba(255,255,255,0.05) !important;
     border: 1px solid var(--border2) !important;
     border-radius: 10px !important;
-    color: var(--text) !important;
+    color: black !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 0.9rem !important;
     transition: border-color 0.25s, box-shadow 0.25s !important;
 }
-.stTextInput > div > div > input:focus {
+.stSelectbox > div > div {
+    background: white !important;
+    color: black !important;
+}
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stSelectbox > div > div:focus,
+.stNumberInput > div > div > input:focus,
+.stDateInput > div > div > input:focus,
+.stMultiSelect > div > div > div:focus {
     border-color: var(--accent) !important;
     box-shadow: 0 0 0 3px rgba(26,108,245,0.15) !important;
+}
+.stTextInput > div > div > input::placeholder,
+.stTextArea > div > div > textarea::placeholder {
+    color: rgba(0,0,0,0.5) !important;
 }
 .stTextInput label, .stSelectbox label,
 .stDateInput label, .stNumberInput label {
@@ -175,6 +201,41 @@ html, body, [class*="css"], main,
     letter-spacing: 1.1px !important;
     font-weight: 600 !important;
 }
+
+/* ── Primary action buttons ── */
+.stButton > button {
+    background: linear-gradient(90deg, var(--accent) 0%, #0e52c1 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: 'Sora', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    letter-spacing: 0.4px !important;
+    padding: 10px 24px !important;
+    transition: all 0.3s ease !important;
+    animation: glow 4s infinite;
+}
+form .stButton > button {
+    background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%) !important;
+    color: black !important;
+}
+form .stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.35) !important;
+    filter: brightness(1.1) !important;
+    color: black !important;
+}
+form .stButton > button:active {
+    transform: translateY(0) !important;
+    color: black !important;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(59,130,246,0.35) !important;
+    filter: brightness(1.1) !important;
+}
+.stButton > button:active { transform: translateY(0) !important; }
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
@@ -306,7 +367,7 @@ html, body, [class*="css"], main,
     border: 1px solid var(--accent-brd);
     border-radius: 24px;
     padding: 52px 44px;
-    margin-bottom: 28px;
+    margin: 28px 0 28px 0;
     position: relative;
     overflow: hidden;
     animation: fadeUp 0.6s ease both;
@@ -995,30 +1056,55 @@ def page_search():
 
         c3, c4, c5 = st.columns(3)
         with c3:
+            adults = st.number_input("👨‍👩‍👧 Adults", min_value=1, max_value=9, value=1)
+        with c4:
+            children = st.number_input("🧒 Children", min_value=0, max_value=9, value=0)
+        with c5:
+            infants = st.number_input("👶 Infants", min_value=0, max_value=9, value=0)
+
+        c6, c7, c8 = st.columns(3)
+        with c6:
             travel_date = st.date_input(
                 "📅  Travel Date",
                 value=date.today() + timedelta(days=7),
                 min_value=date.today(),
                 max_value=date.today() + timedelta(days=365),
             )
-        with c4:
-            passengers = st.number_input("👥  Passengers", min_value=1, max_value=9, value=1)
-        with c5:
+        with c7:
             flight_class = st.selectbox("✈️  Class", ["Economy", "Business", "First Class"])
+        with c8:
+            seat_preference = st.selectbox(
+                "🪟 Seat Preference",
+                ["No preference", "Window", "Aisle"],
+                index=0,
+            )
+
+        trip_type = st.selectbox("✈️ Flight Type", ["Direct", "Round Trip"], index=0)
 
         submitted = st.form_submit_button("🔍  Search Flights", use_container_width=True)
 
     if submitted:
+        total_passengers = adults + children + infants
         if origin == destination:
             st.markdown('<div class="error-box">⚠️ Departure and destination cities cannot be the same.</div>',
+                        unsafe_allow_html=True)
+        elif total_passengers == 0:
+            st.markdown('<div class="error-box">⚠️ Please select at least one passenger.</div>',
                         unsafe_allow_html=True)
         else:
             results = db.search_flights(origin, destination)
             st.session_state.search_results  = results
             st.session_state.search_params   = {
-                "origin": origin, "destination": destination,
+                "origin": origin,
+                "destination": destination,
                 "travel_date": str(travel_date),
-                "passengers": passengers, "flight_class": flight_class,
+                "flight_class": flight_class,
+                "adults": adults,
+                "children": children,
+                "infants": infants,
+                "seat_preference": seat_preference,
+                "trip_type": trip_type,
+                "passengers": total_passengers,
             }
 
     # ── Results ────────────────────────────────────────────────────────────────
@@ -1033,7 +1119,8 @@ def page_search():
             ✈️ Found <strong>{len(flights)}</strong> flight(s) from
             <strong>{params['origin']}</strong> to <strong>{params['destination']}</strong>
             on <strong>{params['travel_date']}</strong> ·
-            {pax} passenger(s) · {cls}
+            {pax} passenger(s) · {params['adults']} adult(s), {params['children']} child(ren), {params['infants']} infant(s) ·
+            {cls} · {params['trip_type']} · Seat: {params['seat_preference']}
         </div>
         """, unsafe_allow_html=True)
 
@@ -1112,7 +1199,9 @@ def page_search():
         <div class="info-box">
             You selected: <strong>{flight['airline']}</strong> {flight['flight_number']} ·
             {flight['origin']} → {flight['destination']} ·
-            Departs <strong>{flight['departure_time']}</strong> · <strong>{cls}</strong>
+            Departs <strong>{flight['departure_time']}</strong> · <strong>{cls}</strong><br>
+            Adults: <strong>{params['adults']}</strong>, Children: <strong>{params['children']}</strong>, Infants: <strong>{params['infants']}</strong> ·
+            Seat: <strong>{params['seat_preference']}</strong> · {params['trip_type']}
         </div>
         """, unsafe_allow_html=True)
 
